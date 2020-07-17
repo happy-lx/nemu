@@ -1,4 +1,4 @@
-#include "nemu.h"
+#include <common.h>
 
 /* We use the POSIX regex functions to process regular expressions.
  * Type 'man regex' for more information about POSIX regex functions.
@@ -96,7 +96,7 @@ static bool make_token(char *e) {
   return true;
 }
 
-uint32_t expr(char *e, bool *success) {
+word_t expr(char *e, bool *success) {
   if (!make_token(e)) {
     *success = false;
     return 0;

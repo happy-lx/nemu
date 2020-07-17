@@ -1,5 +1,5 @@
-#include "monitor/watchpoint.h"
-#include "monitor/expr.h"
+#include "watchpoint.h"
+#include "expr.h"
 
 #define NR_WP 32
 

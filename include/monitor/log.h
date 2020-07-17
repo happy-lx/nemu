@@ -1,13 +1,14 @@
-#ifndef __LOG_H__
-#define __LOG_H__
+#ifndef __MONITOR_LOG_H__
+#define __MONITOR_LOG_H__
 
-#include "common.h"
+#include <common.h>
 
 #ifdef DEBUG
 extern FILE* log_fp;
 #	define log_write(...) \
   do { \
-    if (log_fp != NULL) { \
+    extern bool log_enable(); \
+    if (log_fp != NULL && log_enable()) { \
       fprintf(log_fp, __VA_ARGS__); \
       fflush(log_fp); \
     } \

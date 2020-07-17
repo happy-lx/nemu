@@ -1,4 +1,4 @@
-#include "common.h"
+#include <common.h>
 #include <stdarg.h>
 
 FILE *log_fp = NULL;
@@ -22,15 +22,13 @@ void strcatf(char *buf, const char *fmt, ...) {
 }
 
 void asm_print(vaddr_t ori_pc, int instr_len, bool print_flag) {
-  snprintf(tempbuf, sizeof(tempbuf), "%8x:   %s%*.s%s", ori_pc, log_bytebuf,
+  snprintf(tempbuf, sizeof(tempbuf), FMT_WORD ":   %s%*.s%s", ori_pc, log_bytebuf,
       50 - (12 + 3 * instr_len), "", log_asmbuf);
   log_write("%s\n", tempbuf);
   if (print_flag) {
     puts(tempbuf);
   }
-}
 
-void log_clearbuf(void) {
   log_bytebuf[0] = '\0';
   log_asmbuf[0] = '\0';
 }
