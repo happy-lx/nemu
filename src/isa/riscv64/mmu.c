@@ -16,7 +16,9 @@ typedef union PageTableEntry {
     uint32_t d   : 1;
     uint32_t rsw : 2;
     uint64_t ppn :44;
-    uint32_t pad :10;
+    uint32_t pad : 8;
+    uint32_t n   : 1;
+    uint32_t c   : 1;
   };
   uint64_t val;
 } PTE;
@@ -24,6 +26,11 @@ typedef union PageTableEntry {
 #define PGSHFT 12
 #define PGMASK ((1ull << PGSHFT) - 1)
 #define PGBASE(pn) (pn << PGSHFT)
+
+#define NAPOTBITS 4
+#define NAPOTMASK ((1ull << NAPOTBITS) - 1)
+#define NAPOTFULLMASK ((1ull << (NAPOTBITS + PGSHFT)) - 1)
+#define NAPOTPATTEN 8//0x1000
 
 // Sv39 page walk
 #define PTW_LEVEL 3
@@ -69,6 +76,16 @@ static inline bool check_permission(PTE *pte, bool ok, vaddr_t vaddr, int type) 
   return true;
 }
 
+static inline bool check_napot(PTE* pte)
+{
+  return (!pte->c && !pte->n) || (!pte->c && pte->n && ((pte->ppn & NAPOTMASK) == NAPOTPATTEN));
+}
+
+static inline bool is_napot(PTE* pte)
+{
+  return (!pte->c && pte->n && ((pte->ppn & NAPOTMASK) == NAPOTPATTEN));
+}
+
 static paddr_t ptw(vaddr_t vaddr, int type) {
   word_t pg_base = PGBASE(satp->ppn);
   word_t p_pte; // pte pointer
@@ -92,6 +109,14 @@ static paddr_t ptw(vaddr_t vaddr, int type) {
   }
 
   if (!check_permission(&pte, true, vaddr, type)) return MEM_RET_FAIL;
+
+  if(level == 0)
+  {
+    //leaf
+    if(!check_napot(&pte)) return MEM_RET_FAIL;
+    //handle napot extension leaf pte
+    if(is_napot(&pte)) pg_base = (pg_base & ~NAPOTFULLMASK) | (vaddr & NAPOTFULLMASK & ~PGMASK);
+  }
 
   if (level > 0) {
     // superpage
@@ -124,8 +149,9 @@ int isa_vaddr_check(vaddr_t vaddr, int type, int len) {
   }
   uint32_t mode = (mstatus->mprv && (!ifetch) ? mstatus->mpp : cpu.mode);
   if (mode < MODE_M) {
+    // if (true) {
     assert(satp->mode == 0 || satp->mode == 8);
-    if (satp->mode == 8) return MEM_RET_NEED_TRANSLATE;
+    if (satp->mode == 8) {return MEM_RET_NEED_TRANSLATE;}
   }
   return MEM_RET_OK;
 }
